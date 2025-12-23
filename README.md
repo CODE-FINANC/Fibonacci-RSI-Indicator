@@ -96,8 +96,7 @@ Built-in alert conditions for:
 
 ## 📸 Screenshots
 
-![Fibonacci & RSI Indicator](docs/screenshot-1.png)
-
+https://github.com/CODE-FINANC/Fibonacci-RSI-Indicator/blob/main/docs/Fibonacci%20%26%20RSI%20Indicator.jpg
 ## 🛠️ Technical Details
 
 - **Version**: Pine Script v6
