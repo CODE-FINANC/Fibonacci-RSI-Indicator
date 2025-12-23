@@ -1,0 +1,133 @@
+//@version=6
+// ============================================================
+// Fibonacci 0.618 & RSI Indicator
+// ============================================================
+// Developer: CODE_FINANCE Team
+// Telegram: https://t.me/code_finance
+// Email: info.cdodefinance@gmail.com
+// GitHub: https://github.com/CODE-FINANC
+// ============================================================
+
+indicator("Fibonacci 0.618 & RSI", overlay=true, max_lines_count=500, max_labels_count=100, max_boxes_count=50)
+
+// ========== Fibonacci 0.618 Settings ==========
+fibGroup = "Fibonacci 0.618 Settings"
+fib_enabled = input.bool(true, "Show Fibonacci 0.618", group=fibGroup)
+swingLength = input.int(40, "Swing Length", minval=3, group=fibGroup, tooltip="Swing sensitivity - higher value = stronger swings")
+lineWidth = input.int(2, "Line Width", minval=1, maxval=5, group=fibGroup)
+extendRight = input.bool(true, "Extend Line to Right", group=fibGroup)
+boxOffset = input.int(25, "Box Distance from Candles", minval=0, maxval=100, group=fibGroup, tooltip="Number of candles distance from last candle")
+showBox = input.bool(true, "Show Fibonacci Box", group=fibGroup)
+
+// Identify Swing High and Swing Low
+swingHigh = ta.pivothigh(high, swingLength, swingLength)
+swingLow = ta.pivotlow(low, swingLength, swingLength)
+
+// Store last swings
+var float lastSwingHigh = na
+var float lastSwingLow = na
+var int lastSwingHighBar = na
+var int lastSwingLowBar = na
+
+// Update when new swing found
+if not na(swingHigh)
+    lastSwingHigh := swingHigh
+    lastSwingHighBar := bar_index - swingLength
+
+if not na(swingLow)
+    lastSwingLow := swingLow
+    lastSwingLowBar := bar_index - swingLength
+
+// Calculate Fibonacci 0.618 for both directions
+var float fib618Bullish = na
+var float fib618Bearish = na
+
+if not na(lastSwingHigh) and not na(lastSwingLow)
+    priceRange = lastSwingHigh - lastSwingLow
+    fib618Bullish := lastSwingLow + (priceRange * 0.618)
+    fib618Bearish := lastSwingHigh - (priceRange * 0.618)
+
+// Draw bullish Fibonacci
+var line fibLineBull = na
+var label fibLabelBull = na
+var box fibBoxBull = na
+
+if fib_enabled and not na(fib618Bullish) and not na(lastSwingLow)
+    line.delete(fibLineBull)
+    label.delete(fibLabelBull)
+    box.delete(fibBoxBull)
+    
+    startBar = math.min(lastSwingHighBar, lastSwingLowBar)
+    fibLineBull := line.new(startBar, fib618Bullish, bar_index, fib618Bullish, color=color.new(color.green, 0), width=lineWidth, extend=extendRight ? extend.right : extend.none, style=line.style_solid)
+    
+    labelText = "BUY 0.618 (" + str.tostring(fib618Bullish, "#.#####") + ")"
+    fibLabelBull := label.new(bar_index + boxOffset, fib618Bullish, labelText, color=color.new(color.green, 70), textcolor=color.black, style=label.style_label_left, size=size.normal)
+    
+    if showBox
+        boxTop = fib618Bullish + (lastSwingHigh - lastSwingLow) * 0.02
+        boxBottom = fib618Bullish - (lastSwingHigh - lastSwingLow) * 0.02
+        fibBoxBull := box.new(bar_index + boxOffset, boxTop, bar_index + boxOffset + 10, boxBottom, border_color=color.new(color.green, 50), bgcolor=color.new(color.green, 90), border_width=1, extend=extendRight ? extend.right : extend.none)
+
+// Draw bearish Fibonacci
+var line fibLineBear = na
+var label fibLabelBear = na
+var box fibBoxBear = na
+
+if fib_enabled and not na(fib618Bearish) and not na(lastSwingHigh)
+    line.delete(fibLineBear)
+    label.delete(fibLabelBear)
+    box.delete(fibBoxBear)
+    
+    startBar = math.min(lastSwingHighBar, lastSwingLowBar)
+    fibLineBear := line.new(startBar, fib618Bearish, bar_index, fib618Bearish, color=color.new(color.red, 0), width=lineWidth, extend=extendRight ? extend.right : extend.none, style=line.style_solid)
+    
+    labelText = "SELL 0.618 (" + str.tostring(fib618Bearish, "#.#####") + ")"
+    fibLabelBear := label.new(bar_index + boxOffset, fib618Bearish, labelText, color=color.new(color.red, 70), textcolor=color.black, style=label.style_label_left, size=size.normal)
+    
+    if showBox
+        boxTop = fib618Bearish + (lastSwingHigh - lastSwingLow) * 0.02
+        boxBottom = fib618Bearish - (lastSwingHigh - lastSwingLow) * 0.02
+        fibBoxBear := box.new(bar_index + boxOffset, boxTop, bar_index + boxOffset + 10, boxBottom, border_color=color.new(color.red, 50), bgcolor=color.new(color.red, 90), border_width=1, extend=extendRight ? extend.right : extend.none)
+
+// Show arrows only on swings used for Fibonacci
+showHighArrow = fib_enabled and bar_index == lastSwingHighBar and not na(lastSwingHigh)
+showLowArrow = fib_enabled and bar_index == lastSwingLowBar and not na(lastSwingLow)
+
+plotshape(showHighArrow, "Used Swing High", shape.triangledown, location.abovebar, color=color.new(color.red, 0), size=size.normal)
+plotshape(showLowArrow, "Used Swing Low", shape.triangleup, location.belowbar, color=color.new(color.green, 0), size=size.normal)
+
+// Draw connecting line
+var line swingLine = na
+if fib_enabled and not na(lastSwingHigh) and not na(lastSwingLow) and not na(lastSwingHighBar) and not na(lastSwingLowBar)
+    line.delete(swingLine)
+    swingLine := line.new(lastSwingHighBar, lastSwingHigh, lastSwingLowBar, lastSwingLow, color=color.new(color.gray, 50), width=1, style=line.style_dashed)
+
+// ========== RSI Settings ==========
+rsiGroup = "RSI Settings"
+rsi_enabled = input.bool(true, "Show RSI Signals", group=rsiGroup)
+rsi_tf = input.timeframe("", "RSI Timeframe", group=rsiGroup)
+rsi_length = input.int(14, "RSI Length", group=rsiGroup)
+rsi_oversold = input.int(30, "Oversold Level", minval=1, maxval=50, group=rsiGroup)
+rsi_overbought = input.int(70, "Overbought Level", minval=50, maxval=99, group=rsiGroup)
+rsi_oversold_color = input.color(#1976D2, "Oversold Label Color", group=rsiGroup)
+rsi_overbought_color = input.color(#F57C00, "Overbought Label Color", group=rsiGroup)
+rsi_text_color = input.color(color.white, "RSI Text Color", group=rsiGroup)
+
+// Calculate RSI
+rsi_value = request.security(syminfo.tickerid, rsi_tf, ta.rsi(close, rsi_length))
+
+// Display RSI signals - only at crossover moment
+rsi_oversold_cross = ta.crossunder(rsi_value, rsi_oversold)
+rsi_overbought_cross = ta.crossover(rsi_value, rsi_overbought)
+
+if rsi_enabled and rsi_oversold_cross
+    label.new(bar_index, low, "RSI<" + str.tostring(rsi_oversold) + "\n" + str.tostring(rsi_value, "#.#"), color=color.new(rsi_oversold_color, 0), textcolor=rsi_text_color, style=label.style_label_up, size=size.normal)
+
+if rsi_enabled and rsi_overbought_cross
+    label.new(bar_index, high, "RSI>" + str.tostring(rsi_overbought) + "\n" + str.tostring(rsi_value, "#.#"), color=color.new(rsi_overbought_color, 0), textcolor=rsi_text_color, style=label.style_label_down, size=size.normal)
+
+// ========== Alert Conditions ==========
+alertcondition(rsi_oversold_cross and rsi_enabled, "RSI Oversold", "RSI dropped below oversold level!")
+alertcondition(rsi_overbought_cross and rsi_enabled, "RSI Overbought", "RSI rose above overbought level!")
+alertcondition(fib_enabled and ta.crossover(close, fib618Bullish), "Fib Buy Signal", "Price crossed above bullish 0.618 level")
+alertcondition(fib_enabled and ta.crossunder(close, fib618Bearish), "Fib Sell Signal", "Price crossed below bearish 0.618 level")
