@@ -133,3 +133,4 @@ This indicator is for educational and informational purposes only. It should not
 ---
 
 **Happy Trading! 📈💰**
+![Fibonacci 0.618 & RSI Indicator](docs/screenshot-1.png)
